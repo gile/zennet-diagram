@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <style type="text/css">
-  #test {
-    width: 60%;
-    height: 500px;
+  #stage {
+    width: 650px;
+    height: 450px;
     border: 1px solid grey;
   }
-  #test svg {
+  #stage svg {
     width: 100%;
     height: 100%;
   }
@@ -20,13 +20,29 @@
     background: #eee;
   }
 
+  #publisher {
+      transform-origin: 130px, 325px;
+  }
+
+  #provider {
+      transform-origin: 315px, 325px;
+  }
+  
+  #vm {
+      transform-origin: 473px, 337px;
+  }
+  
+  #blockchain {
+     transform-origin: 320px, 90px;
+  }
+
   .role {
     rx: 20px;
     ry: 20px;
   }
 
   div.buttons-div {
-    width: 60%;
+    width: 650px;
   }
 
   ul.buttons-ul {
@@ -34,6 +50,7 @@
     height: 100px;
     text-align: center;
     margin-top: 20px;
+    padding: 0;
     list-style-type: none;
   }
 
@@ -61,8 +78,10 @@
 ​</style>
 </head>
 <body>
-  <div id="test">
-  </div>
+  <div id="stage"> <!-- Fallback Text Content can go here --> </div>
+ 
+<!-- <object type="image/svg+xml" data="publisher.svg" class="logo">
+</object> -->
 
   <div class="buttons-div">
     <ul class="buttons-ul">
@@ -79,8 +98,8 @@
 $( document ).ready(function() {
   var CURVED_LINES = false;
 
-  var   w = $('#test').width(),
-          h = $('#test').height();
+  var   w = $('#stage').width(),
+          h = $('#stage').height();
 
     // var w = 700;
     // var h = 300;
@@ -89,56 +108,31 @@ $( document ).ready(function() {
 
   var textCircleRadius = 15;
 
+  var markerParams;
+  var anchorOffset = {x:12, y: 8};
+  var defs;
+  var lineData;
+  var lg1, lg2;
+  var publisher, provider, vm, blockchain;
+  var vmTranslate = {x: -50, y: 50};
+
   var lineFunction = d3.svg.line()
                               .x(x)
                               .y(y)
                               .interpolate("cardinal");
-
-  var pubWidth = 100,
-        pubHeight = 80,
-        pubXOffsetFactor = 0.05,
-        pubYOffsetFactor = 0.7;
-
-  var bcRadius = 30,
-        bcXOffsetFactor = 0.5,
-        bcYOffsetFactor = 0.2;
-
-  var defs = 
-        { 
-            pub: {
-                w: pubWidth, 
-                h: pubHeight,
-                x: w * pubXOffsetFactor, 
-                y: h * 0.7
-            },
-            prov: {
-               w: pubWidth, 
-               h: pubHeight,
-                x: w * (1 - pubXOffsetFactor) - pubWidth, 
-                y: h* pubYOffsetFactor
-            },
-            bc: {
-              radius: bcRadius,
-              cx: w* bcXOffsetFactor,
-              cy: h* bcYOffsetFactor
-            }
-        };
-
-  var markerParams;
-  var anchorOffset = 15;
 
    var getAngle = function(center, point) {
         var dx = point.x - center.x,
               dy = (point.y - center.y);
 
         var angleRad = Math.atan2(dy , dx) + (Math.PI / 2),
-              angleDeg = (angleRad * 180 / Math.PI);
-
-        console.log('angleRad', angleRad);
-        console.log('angleDeg', angleDeg);
+              angleDeg = (angleRad * 180 / Math.PI);  
    }
 
     var linePoints = function(p1, p2) {
+        if (!p1) { return [ {x:0, y:0}, {x:0, y:0}, {x:0, y:0}]; }
+
+        var p2 = p2 || p1;
         var  isBezier = CURVED_LINES || false,
               offset = isBezier ? 100 : 0,
               center = {
@@ -195,6 +189,7 @@ $( document ).ready(function() {
     var getAnchorPoint = function(role, side, type, offset) {
         var offset = offset || {x:0, y:0};
 
+
         if (defs[role]) {
             if (defs[role].anchor && defs[role].anchor[side]) {
             
@@ -208,15 +203,22 @@ $( document ).ready(function() {
                     // offset the anchor point
                     switch(side) {
                         case 'left': 
+
                             return {
-                                  x: defs[role].anchor[side].x - anchorOffset + offset.x,
+                                  x: defs[role].anchor[side].x - anchorOffset.x + offset.x,
                                   y: defs[role].anchor[side].y + offset.y
                             }
                         
                          case 'right': 
                               return {
-                                    x: defs[role].anchor[side].x + anchorOffset + offset.x,
+                                    x: defs[role].anchor[side].x + anchorOffset.x + offset.x,
                                     y: defs[role].anchor[side].y + offset.y
+                              }
+
+                        case 'top': 
+                              return {
+                                    x: defs[role].anchor[side].x  + offset.x,
+                                    y: defs[role].anchor[side].y - anchorOffset.y + offset.y
                               }
 
                         case 'bottomLeft':
@@ -271,215 +273,359 @@ $( document ).ready(function() {
        return offset;
     }
 
-    markerParams = getMarkerParams("arrow-head", 30, 30, 0.5, "black", "steelblue");
+    function showAnchorPoints() {
 
-    defs.pub.center = {x: defs.pub.x + defs.pub.w / 2, y: defs.pub.y + defs.pub.h / 2};
-    defs.pub.anchor = {
-          left: {x: defs.pub.x, y: defs.pub.center.y }, 
-          right: {x: defs.pub.x + defs.pub.w, y: defs.pub.center.y}
-    };
-    defs.prov.center = {x: defs.prov.x + defs.prov.w / 2, y: defs.prov.y + defs.prov.h / 2};
-    defs.prov.anchor = {
-          left: {x: defs.prov.x, y: defs.prov.center.y }, 
-          right: {x: defs.prov.x + defs.prov.w, y: defs.prov.center.y}
-    };
+        var centerPoints = [
+            defs.pub.center,
+            defs.prov.center,
+            defs.vm.center,
+            defs.bc.center
+        ];
 
-    defs.bc.center = {x: defs.bc.cx, y: defs.bc.cy};
-    defs.bc.anchor = {
-      bottomLeft: {x: defs.bc.cx - (defs.bc.radius * Math.cos(Math.PI / 4)), y: defs.bc.cy + (defs.bc.radius * Math.cos(Math.PI / 4))},
-      bottomRight: {x: defs.bc.cx + (defs.bc.radius * Math.cos(Math.PI / 4)), y: defs.bc.cy + (defs.bc.radius * Math.sin(Math.PI / 4))}
-    };
+        var anchorPointsOrigin = [
+            defs.pub.anchor.left,
+            defs.pub.anchor.right,
+            defs.prov.anchor.left,
+             defs.prov.anchor.right,
+            defs.vm.anchor.left,
+            defs.vm.anchor.right,
+            defs.bc.anchor.bottomLeft,
+            defs.bc.anchor.bottomRight
+        ];
 
-    var lineData = [
-      [], // 0
-      [   // 1
-          {
-            id: 1,
-            type: 'direct',
-            start: linePoints(getAnchorPoint('pub' ,'right', 'origin'), getAnchorPoint('pub' ,'right', 'origin')), 
-            end: linePoints(getAnchorPoint('pub' ,'right', 'origin'), getAnchorPoint('prov' ,'left', 'terminus'))
-          },
-          {
-            id: 2,
-            type: 'blockchain',
-            start: linePoints(getAnchorPoint('pub' ,'right', 'origin'), getAnchorPoint('pub' ,'right', 'origin')), 
-            end: linePoints(getAnchorPoint('pub' ,'right', 'origin'), getAnchorPoint('bc' ,'bottomLeft', 'terminus'))
-          }
-      ],
-      [
-          {
-            id: 3,
-            type: 'direct',
-            start: linePoints(getAnchorPoint('prov' ,'left', 'origin'), getAnchorPoint('prov' ,'left', 'origin')), 
-            end: linePoints(getAnchorPoint('prov' ,'left', 'origin'), getAnchorPoint('pub' ,'right', 'terminus'))
-          },
-          {
-            id: 4,
-            type: 'blockchain',
-            start: linePoints(defs.bc.center, defs.bc.center), 
-            end: linePoints(defs.bc.center, getAnchorPoint('prov' ,'left', 'terminus', {x:0, y: -15}))
-          }
-      ]
-    ]
+        var anchorPointsTerminus = [],
+              roles = ['pub', 'prov', 'vm', 'bc'],
+              sides = ['left', 'right', 'bottomLeft', 'bottomRight'];
 
-    
-    console.log(defs.pub.center);
+        for (var i=0; i<roles.length; ++i) {
+            var role = roles[i];
 
-    
+                for (var j=0; j<sides.length; ++j) {
+                      var side = sides[j];
 
-    var svg = d3.select("#test")
-          .append("svg")
-          // .attr("width", w)
-          // .attr("height", h)
-          .attr("id", "vis")
-          .attr("xmlns", "http://www.w3.org/2000/svg");
+                      anchorPointsTerminus.push( getAnchorPoint(role, side, "terminus") );
+            }
+        }
 
-    var svgdefs =  svg.append("defs");
 
-    var marker = svgdefs.append("marker")
-              .attr("id", markerParams.id)
-              .attr("viewBox", markerParams.viewBox)
-              .attr("orient", markerParams.orient)
-              .attr('markerUnits', markerParams.markerUnits)
-              .attr("refX", markerParams.refX)
-              .attr("refY", markerParams.refY)
-              .attr("markerWidth", markerParams.markerWidth)
-              .attr("markerHeight", markerParams.markerHeight);
-              
-      var markerPath = marker.append("path")
-              .attr("d", markerParams.d)
-              .attr("stroke-width", markerParams.strokeWidth)
-              .attr("stroke-color", markerParams.strokeColor)
-              .attr("fill", markerParams.fill);
+        var pg = d3.select("svg#Layer_1").append("g");
 
-  
-    var lg1 = svg.append("g")
-            .attr("class", "line-group")
-            .attr("id", "lg1");
-    
-    var lg2 = svg.append("g")
-            .attr("class", "line-group")
-            .attr("id", "lg2");
-                    
-    var publisher = svg.append('rect')
-            .attr('id', 'publisher')
-            .attr('class', 'role')
-            .attr('width', defs.pub.w)
-            .attr('height', defs.pub.h)
-            .attr('rx', 10)
-            .attr('ry', 10)
-            .attr('transform', 'translate(' + defs.pub.x + ', ' + defs.pub.y + ')')
-            .attr('fill', 'none')
-            .attr('stroke-width', 10)
-            .attr('stroke', 'purple');
-
-    var provider = svg.append('rect')
-            .attr('id', 'provider')
-            .attr('class', 'role')
-            .attr('width', defs.prov.w)
-            .attr('height', defs.prov.h)
-            .attr('rx', 10)
-            .attr('ry', 10)
-            .attr('transform', 'translate(' + defs.prov.x + ', ' + defs.prov.y + ')')
-            .attr('fill', 'none')
-            .attr('stroke-width', 10)
-            .attr('stroke', 'orange');
-          
-    var blockchain = svg.append("circle")
-            .attr('id', "blockchain")
-            .attr('r', defs.bc.radius)
-            // .attr('cx', defs.bc.cx)
-            // .attr('cy', defs.bc.cy)
-            .attr('transform', 'translate(' + defs.bc.cx + ', ' + defs.bc.cy + ')')
-            .attr('fill', 'green');
-          
-   
-   // update(1);
-
-   // setTimeout(function() {update(2)}, 2000);
-
-function update(step) {
-    var durationArrow = 500,
-          durationLabel = 500,
-          durationRemove = 500;
-
-    var arrows = lg1.selectAll("path.arrow")
-          .data(lineData[step], function(d) {return d.id});
-
-      arrows.enter()
-          .append("path")
-          .attr('class', 'arrow')
-          .attr("marker-end", "url(#arrow-head)")
-          .attr("d", function (d) { return getPath(d.start) })
-          .attr("stroke", "steelblue")
-          .attr("stroke-width", 12)
-          .attr("fill", "none")
-          .attr('opacity', 1)
-        .transition()
-              .duration(durationArrow)
-              .attr("d", function (d) { return getPath(d.end) });
-    
-      arrows.exit()
-            .transition()
-              .duration(durationRemove)
-              .attr('opacity', 0)
-            .transition()
-              .delay(durationRemove)
-              .remove();
-
-      var arrowCircles = lg1.selectAll("circle")
-          .data(lineData[step], function(d) {return d.id});
-
-       arrowCircles.enter()
+        pg.selectAll("circle.center-point")
+            .data(centerPoints)
+          .enter()
             .append("circle")
-            .attr("cx", function(d) {return d.end[1].x  + textOffset(d.end).x})
-            .attr("cy", function(d) {return d.end[1].y  + textOffset(d.end).y})
-            .attr("r", 0)
-            .attr("fill", "none")
+            .attr("class", "center-point")
+            .attr("cx", function(d) {return d.x})
+            .attr("cy", function(d) {return d.y})
+            .attr("r", 5)
+            .attr("fill", "red");
+
+         pg.selectAll("circle.anchor-point-origin")
+            .data(anchorPointsOrigin)
+          .enter()
+            .append("circle")
+            .attr("class", "anchor-point-origin")
+            .attr("cx", function(d) {return d.x})
+            .attr("cy", function(d) {return d.y})
+            .attr("r", 5)
+            .attr("fill", "green");  
+
+        pg.selectAll("circle.anchor-point-terminus")
+            .data(anchorPointsTerminus)
+          .enter()
+            .append("circle")
+            .attr("class", "anchor-point-terminus")
+            .attr("cx", function(d) {return d.x})
+            .attr("cy", function(d) {return d.y})
+            .attr("r", 5)
+            .attr("fill", "blue");  
+  }
+
+  function init() {   
+        var  $pub = $('#publisher #pub-back'),
+              $prov = $('#provider #prov-back'),
+              $vm = $('#vm #vm-back'),
+              $blockchain = $('#blockchain #bc-back');
+              
+        defs = 
+              { 
+                  pub: {
+                      w: parseFloat($pub.attr('width')), 
+                      h: parseFloat($pub.attr('height')),
+                      x: parseFloat($pub.attr('x')),
+                      y: parseFloat($pub.attr('y'))
+                  },
+                  prov: {
+                     w: parseFloat($prov.attr('width')), 
+                      h: parseFloat($prov.attr('height')),
+                      x: parseFloat($prov.attr('x')),
+                      y: parseFloat($prov.attr('y'))
+                  },
+                  vm: {
+                      w: parseFloat($vm.attr('width')), 
+                      h: parseFloat($vm.attr('height')),
+                      x: parseFloat($vm.attr('x')) + vmTranslate.x,
+                      y: parseFloat($vm.attr('y')) + vmTranslate.y
+                  },
+                  bc: {
+                    radius: parseFloat($blockchain.attr('r')),
+                    cx: parseFloat($blockchain.attr('cx')),
+                    cy: parseFloat($blockchain.attr('cy'))
+                  }
+              };
+
+
+          markerParams = getMarkerParams("arrow-head", 30, 30, 0.5, "black", "steelblue");
+
+          defs.pub.center = {x: defs.pub.x + defs.pub.w / 2, y: defs.pub.y + defs.pub.h / 2};
+          defs.pub.anchor = {
+                left: {x: defs.pub.x, y: defs.pub.center.y }, 
+                right: {x: defs.pub.x + defs.pub.w, y: defs.pub.center.y},
+                top: {x: defs.pub.center.x, y: defs.pub.center.y - (defs.pub.h / 2)}
+          };
+          defs.prov.center = {x: defs.prov.x + defs.prov.w / 2, y: defs.prov.y + defs.prov.h / 2};
+          defs.prov.anchor = {
+                left: {x: defs.prov.x, y: defs.prov.center.y }, 
+                right: {x: defs.prov.x + defs.prov.w, y: defs.prov.center.y},
+                top: {x: defs.prov.center.x, y: defs.prov.center.y - (defs.prov.h / 2)}
+          };
+         
+          defs.vm.center = {x: defs.vm.x + defs.vm.w / 2, y: defs.vm.y + defs.vm.h / 2};
+          defs.vm.anchor = {
+                left: {x: defs.vm.x, y: defs.vm.center.y }, 
+                right: {x: defs.vm.x + defs.vm.w, y: defs.vm.center.y}
+          };
+
+          defs.bc.center = {x: defs.bc.cx, y: defs.bc.cy};
+          defs.bc.anchor = {
+            bottomLeft: {x: defs.bc.cx - (defs.bc.radius * Math.cos(Math.PI / 4)), y: defs.bc.cy + (defs.bc.radius * Math.cos(Math.PI / 4))},
+            bottomRight: {x: defs.bc.cx + (defs.bc.radius * Math.cos(Math.PI / 4)), y: defs.bc.cy + (defs.bc.radius * Math.sin(Math.PI / 4))}
+          };
+
+          lineData = [
+            [], // 0
+            [   // 1
+               
+                {
+                  id: 1,
+                  order: 0,
+                  type: 'blockchain',
+                  start: linePoints(defs.pub.center), 
+                  end: linePoints(defs.pub.center, getAnchorPoint('bc' ,'bottomLeft', 'terminus'))
+                },
+                 {
+                  id: 2,
+                  order: 1,
+                  type: 'blockchain',
+                  start: linePoints(getAnchorPoint('bc' ,'bottomRight', 'origin')), 
+                  end: linePoints(getAnchorPoint('bc' ,'bottomRight', 'origin'), getAnchorPoint('prov' ,'top', 'terminus'))
+                },
+            ],
+            [   // 2
+               {
+                  id: 0,
+                  order: 0,
+                  type: 'direct',
+                  start: linePoints(getAnchorPoint('prov' ,'left', 'origin', {x:0, y: -20})), 
+                  end: linePoints(getAnchorPoint('prov' ,'left', 'origin', {x:0, y: -20}), getAnchorPoint('pub' ,'right', 'terminus', {x:-3, y: -20}))
+                },
+                {
+                  id: 3,
+                  order: 0,
+                  type: 'direct',
+                  start: linePoints(defs.pub.center), 
+                  end: linePoints(defs.pub.center, getAnchorPoint('prov' ,'left', 'terminus'))
+                },
+                {
+                  id: 4,
+                  order: 1,
+                  type: 'blockchain',
+                  start: linePoints(defs.pub.center), 
+                  end: linePoints(defs.pub.center, getAnchorPoint('bc' ,'bottomLeft', 'terminus'))
+                },
+                 
+            ],
+            [ // 3
+                {
+                  id: 5,
+                  order: 0,
+                  type: 'blockchain',
+                  start: linePoints(defs.prov.center), 
+                  end: linePoints(defs.prov.center, getAnchorPoint('bc' ,'bottomRight', 'terminus'))
+                },
+                {
+                    id: 6,
+                    order: 2,
+                    type: 'direct',
+                    start: linePoints(defs.pub.center), 
+                    end: linePoints(defs.pub.center, getAnchorPoint('vm' ,'left', 'terminus'))
+                }
+            ]
+          ];
+    }
+
+
+    function render() {
+        var svg = d3.select("svg#Layer_1");
+        //var svg = d3.select("#test")
+              // .append("svg")
+              // // .attr("width", w)
+              // // .attr("height", h)
+              // .attr("id", "vis")
+              // .attr("xmlns", "http://www.w3.org/2000/svg");
+
+        lg1 = svg.insert("g", ":first-child")
+                .attr("class", "line-group")
+                .attr("id", "lg1");
+        
+        lg2 = svg.insert("g", ":first-child")
+                .attr("class", "line-group")
+                .attr("id", "lg2");                
+
+        var svgdefs = svg.insert("defs",":first-child");
+
+        var marker = svgdefs.append("marker")
+                  .attr("id", markerParams.id)
+                  .attr("viewBox", markerParams.viewBox)
+                  .attr("orient", markerParams.orient)
+                  .attr('markerUnits', markerParams.markerUnits)
+                  .attr("refX", markerParams.refX)
+                  .attr("refY", markerParams.refY)
+                  .attr("markerWidth", markerParams.markerWidth)
+                  .attr("markerHeight", markerParams.markerHeight);
+                  
+          var markerPath = marker.append("path")
+                  .attr("d", markerParams.d)
+                  .attr("stroke-width", markerParams.strokeWidth)
+                  .attr("stroke-color", markerParams.strokeColor)
+                  .attr("fill", markerParams.fill);
+       
+          publisher = svg.select('#publisher'),
+          provider= svg.select('#provider'),
+          vm = svg.select('svg g#vm'),
+          blockchain = svg.select('#blockchain');
+  }
+
+
+  function update(step) {
+
+      var durationEnter = 500,
+            durationExit = 500;
+
+      
+
+      var arrows = lg1.selectAll("path.arrow")
+           .data(lineData[step], function(d) {return d.id});
+
+        arrows.enter()
+            .append("path")
+            .attr('class', 'arrow')
+            .attr("marker-end", "url(#arrow-head)")
+            .attr("d", function (d) { return getPath(d.start) })
             .attr("stroke", "steelblue")
-            .attr("stroke-width", 2)
+            .attr("stroke-width", 12)
+            .attr("fill", "none")
             .attr('opacity', 1)
-        .transition()
-            .delay(durationArrow)
-            .duration(durationLabel)
-            .ease('elastic')
-            .attr("r", textCircleRadius);
+          .transition()
+                .duration(durationEnter)
+                .delay(function(d) {return d.order * durationEnter * 2})
+                .attr("d", function (d) { return getPath(d.end) });
+      
+        arrows.exit()
+              .transition()
+                .duration(durationExit)
+                .attr('opacity', 0)
+              .transition()
+                .delay(durationExit)
+                .remove();
 
-      arrowCircles.exit()
-            .transition()
-              .duration(durationRemove)
+        var arrowCircles = lg1.selectAll("circle")
+            .data(lineData[step].filter( function(d) { return d.id > 0; } ), 
+                    function(d) {return d.id});
+
+         arrowCircles.enter()
+              .append("circle")
+              .attr("cx", function(d) {return d.end[1].x  + textOffset(d.end).x})
+              .attr("cy", function(d) {return d.end[1].y  + textOffset(d.end).y})
+              .attr("r", 0)
+              .attr("fill", "none")
+              .attr("stroke", "steelblue")
+              .attr("stroke-width", 2)
+              .attr('opacity', 1)
+          .transition()
+              .delay(function(d) {return ((d.order * 2) + 1) * durationEnter})
+              .duration(durationEnter)
+              .ease('elastic')
+              .attr("r", textCircleRadius);
+
+        arrowCircles.exit()
+              .transition()
+                .duration(durationExit)
+                .attr('opacity', 0)
+              .transition()
+                .delay(durationExit)
+                .remove();
+
+        var arrowText = lg1.selectAll("text")
+            .data(lineData[step].filter( function(d) { return d.id > 0; } ), 
+                    function(d) {return d.id});
+
+        arrowText.enter()
+              .append("text")
+              .attr("x", function(d) {return d.end[1].x  + textOffset(d.end).x})
+              .attr("y", function(d) {return d.end[1].y  +textOffset(d.end).y + 6})
+              .attr("text-anchor", "middle")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "18px")
+              .attr("fill", "red")
               .attr('opacity', 0)
-            .transition()
-              .delay(durationRemove)
-              .remove();
+              .text(function(d) {return d.id})
+          .transition()
+              .delay(function (d) {return ((d.order * 2) + 1)  * durationEnter})
+              .duration(durationEnter)
+              .attr('opacity', 1);
 
-      var arrowText = lg1.selectAll("text")
-          .data(lineData[step], function(d) {return d.id});
+        arrowText.exit()
+              .transition()
+                .duration(durationExit)
+                .attr('opacity', 0)
+              .transition()
+                .delay(durationExit)
+                .remove();
 
-      arrowText.enter()
-            .append("text")
-            .attr("x", function(d) {return d.end[1].x  + textOffset(d.end).x})
-            .attr("y", function(d) {return d.end[1].y  +textOffset(d.end).y + 6})
-            .attr("text-anchor", "middle")
-            .attr("font-family", "sans-serif")
-            .attr("font-size", "18px")
-            .attr("fill", "red")
-            .attr('opacity', 0)
-            .text(function(d) {return d.id})
-        .transition()
-            .delay(durationArrow)
-            .duration(durationLabel)
-            .attr('opacity', 1);
+      if (step === 3) {
+          var vmOrder = 1;
 
-      arrowText.exit()
-            .transition()
-              .duration(durationRemove)
-              .attr('opacity', 0)
-            .transition()
-              .delay(durationRemove)
-              .remove();
-      } //update
+           vm
+           .transition()
+              .duration(durationEnter)
+              .delay(vmOrder * 2 * durationEnter)
+              .attr('transform', 'translate(' + vmTranslate.x + ',' + vmTranslate.y + ')')
+              .attr('opacity', 1);
+
+          } 
+          else {
+              vm
+                .attr('opacity', 0.3)    
+                .attr('transform', 'translate(0,0)')
+          }
+   } //update
    
+    $("#stage").load('diagram.svg',function(response){
+ 
+          $(this).addClass("svgLoaded");
+
+          if(!response){
+              // Error loading SVG!
+              // Make absolutely sure you are running this on a web server or localhost!
+              return;
+          }
+
+          init()
+          render();
+ 
+    });
+
       /*******************     EVENT HANDLERS   *****************/
       $('li.button').click(function() {
           var step = parseInt($(this).attr('step'));
@@ -489,7 +635,7 @@ function update(step) {
           $(this).addClass('active');
 
           update(step);
-      })
+      })   
     });
   </script>
 </body>
