@@ -63,10 +63,10 @@
   }
 
   li.button {
-    
+    text-align: center;
     text-decoration: none;
-    width: 30px;
-    height: 30px;
+    width: 45px;
+    height: 45px;
     /*background-color: #655ad9;*/
     background-color: #074B7A;
     border-radius: 50%;
@@ -81,8 +81,8 @@
   }
 
   span.button-text {
-    line-height: 30px;
-    font-size: 16px;
+    line-height: 45px;
+    font-size: 20px;
     color: white;
     font-family: "Arial"
   }
@@ -162,6 +162,8 @@
 <script type="text/javascript">
 
 $( document ).ready(function() {
+  var AUTO_START = false;
+
   var CURVED_LINES = false;
 
   var COLORS = {
@@ -565,7 +567,7 @@ $( document ).ready(function() {
               zenDuration = 1200,
               blockDuration = 1000,
               blockColorDuration = 1500,
-              annBlockDelay = 500,
+              annBlockDelay = 1000,
               zenBlockDelay = zenDuration * animationCycles + 500,
               zenOffset = {x: -25, y: 0};
 
@@ -782,7 +784,7 @@ $( document ).ready(function() {
           render();
 
           setTimeout(function() {
-              $('li.button[step="1"]').click();
+              if (AUTO_START) { $('li.button[step="1"]').click() };
           }, 1000);
     });
 
